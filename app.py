@@ -4,6 +4,7 @@ from model_knn import recommend_songs_by_value
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import CORS
 from youtubesearchpython import VideosSearch
+from time import sleep
 
 from yt_dlp import *
 import os
@@ -32,7 +33,15 @@ def download():
     
     @after_this_request
     def remove_file(response):
-        os.remove(f'{videoId}.mp3')
+        try:
+            os.remove(f'{videoId}.mp3')
+        except PermissionError:
+            print(f"The file '{videoId}' is still in use. Retrying in 5 seconds...")
+            sleep(2)  # Wait for 5 seconds
+            try:
+                os.remove(f'{videoId}.mp3')
+            except PermissionError as e:
+                print(f"Error: {e}. Failed to delete the file.")
         return response
     return send_file(f'{videoId}.mp3', as_attachment=True, download_name=f'{title}.mp3')
 
